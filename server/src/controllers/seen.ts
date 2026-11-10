@@ -248,11 +248,12 @@ export class SeenController {
       seasonNumber?: number;
       episodeNumber?: number;
       duration?: number;
+      unset?: boolean;
     };
   }>(async (req, res) => {
     const userId = Number(req.user);
 
-    const { mediaType, id, seasonNumber, episodeNumber, duration } = req.body;
+    const { mediaType, id, seasonNumber, episodeNumber, duration, unset } = req.body;
 
     const { mediaItem, episode, error } =
       await findMediaItemOrEpisodeByExternalId({
@@ -268,37 +269,45 @@ export class SeenController {
       return;
     }
 
-    await Database.knex.transaction(async (trx) => {
-      const previousSeenItem = await trx<Seen>('seen')
-        .where('userId', userId)
-        .where('mediaItemId', mediaItem.id)
-        .where('episodeId', episode?.id || null)
-        .where('date', '>', Date.now() - 1000 * 60 * 60 * 12);
-
-      if (previousSeenItem.length > 0) {
-        logger.debug(
-          `seen entry for userId ${userId}, mediaItemId: ${
-            mediaItem.id
-          }, episodeId: ${episode?.id} already exists, at ${new Date(
-            previousSeenItem.at(0).date
-          )}`
-        );
-
-        return;
-      }
-
-      logger.debug(
-        `adding seen entry for userId ${userId}, mediaItemId: ${mediaItem.id}, episodeId: ${episode?.id}`
-      );
-
-      await trx<Seen>('seen').insert({
+    if (unset) {
+      await seenRepository.delete({
         userId: userId,
         mediaItemId: mediaItem.id,
-        episodeId: episode?.id || null,
-        date: Date.now(),
-        duration: duration,
+      });      
+    
+    } else {
+      await Database.knex.transaction(async (trx) => {
+        const previousSeenItem = await trx<Seen>('seen')
+          .where('userId', userId)
+          .where('mediaItemId', mediaItem.id)
+          .where('episodeId', episode?.id || null)
+          .where('date', '>', Date.now() - 1000 * 60 * 60 * 12);
+
+        if (previousSeenItem.length > 0) {
+          logger.debug(
+            `seen entry for userId ${userId}, mediaItemId: ${
+              mediaItem.id
+            }, episodeId: ${episode?.id} already exists, at ${new Date(
+              previousSeenItem.at(0).date
+            )}`
+          );
+
+          return;
+        }
+
+        logger.debug(
+          `adding seen entry for userId ${userId}, mediaItemId: ${mediaItem.id}, episodeId: ${episode?.id}`
+        );
+
+        await trx<Seen>('seen').insert({
+          userId: userId,
+          mediaItemId: mediaItem.id,
+          episodeId: episode?.id || null,
+          date: Date.now(),
+          duration: duration,
+        });
       });
-    });
+    }
 
     res.status(200);
   });

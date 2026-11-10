@@ -1532,6 +1532,10 @@
                   "duration": {
                     "type": "number",
                     "nullable": true
+                  },
+                  "unset": {
+                    "type": "boolean",
+                    "nullable": true
                   }
                 },
                 "required": [
