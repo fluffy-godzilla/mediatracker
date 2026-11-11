@@ -270,10 +270,14 @@ export class SeenController {
     }
 
     if (unset) {
+      logger.debug(
+        `deleting seen entry for userId ${userId}, mediaItemId: ${mediaItem.id}, episodeId: ${episode?.id}`
+      );
+
       await seenRepository.delete({
         userId: userId,
         mediaItemId: mediaItem.id,
-      });      
+      });
     
     } else {
       await Database.knex.transaction(async (trx) => {
@@ -309,7 +313,7 @@ export class SeenController {
       });
     }
 
-    res.status(200);
+    res.sendStatus(200);
   });
 
   /**
