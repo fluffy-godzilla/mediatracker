@@ -280,11 +280,16 @@ const getItemsKnexSql = async (args: GetItemsArgs) => {
         qb
           .from<Progress>('progress')
           .where('userId', userId)
-          .whereNull('episodeId')
           .whereNot('progress', 1)
           .as('progress'),
-      'progress.mediaItemId',
-      'mediaItem.id'
+      (qb) =>
+        qb
+          .on('progress.mediaItemId', 'mediaItem.id')
+          .andOn((qb) =>
+            qb
+              .onNull('progress.episodeId')
+              .orOn('progress.episodeId', 'firstUnwatchedEpisode.id')
+          )
     );
 
   if (Array.isArray(mediaItemIds)) {
