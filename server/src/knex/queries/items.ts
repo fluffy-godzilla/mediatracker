@@ -101,6 +101,7 @@ const getItemsKnexSql = async (args: GetItemsArgs) => {
       unseenEpisodesCount: 'unseenEpisodesCount',
       seenEpisodesCount: 'seenEpisodesCount',
       progress: 'progress.progress',
+      pausedAt: 'progress.date',
     })
     .from<MediaItemBase>('mediaItem')
     .leftJoin<Seen>(
@@ -538,6 +539,7 @@ const mapRawResult = (row: any): MediaItemItemsResponse => {
     developer: row['mediaItem.developer'],
     lastSeenAt: row['lastSeenAt'],
     progress: row['progress'],
+    pausedAt: row['pausedAt'],
     poster: row['mediaItem.posterId']
       ? `/img/${row['mediaItem.posterId']}`
       : null,
