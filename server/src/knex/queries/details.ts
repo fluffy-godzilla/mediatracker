@@ -24,6 +24,7 @@ export const getDetailsKnex = async (params: {
     userRating,
     lists,
     progress,
+    episodesProgress,
   } = await Database.knex.transaction(async (trx) => {
     const mediaItem = await trx<MediaItemBase>('mediaItem')
       .where({
@@ -74,6 +75,14 @@ export const getDetailsKnex = async (params: {
       userId: userId,
     });
 
+  const episodesProgress = await trx<Progress>('progress')
+    .where({
+      mediaItemId: mediaItemId,
+      userId: userId,
+    })
+    .whereNotNull('episodeId');
+
+  
     return {
       mediaItem,
       seasons,
@@ -82,6 +91,7 @@ export const getDetailsKnex = async (params: {
       userRating,
       lists,
       progress,
+      episodesProgress,
     };
   });
 
@@ -114,6 +124,11 @@ export const getDetailsKnex = async (params: {
     episode.isSpecialEpisode = Boolean(episode.isSpecialEpisode);
     episode.lastSeenAt = _.first(episode.seenHistory)?.date;
     episode.seen = episode.seenHistory?.length > 0;
+
+    const episodeProgress = episodesProgress.find((p) => p.episodeId === episode.id);
+    episode.progress = episodeProgress?.progress;
+    episode.pausedAt = episodeProgress?.date;
+
     delete episode.seasonAndEpisodeNumber;
   });
 
